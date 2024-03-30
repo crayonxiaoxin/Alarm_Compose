@@ -1,6 +1,5 @@
 package com.github.crayonxiaoxin.alarmclock_compose.ui.widgets
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -26,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
+/**
+ * 滚轮选择器
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T> WheelPicker(

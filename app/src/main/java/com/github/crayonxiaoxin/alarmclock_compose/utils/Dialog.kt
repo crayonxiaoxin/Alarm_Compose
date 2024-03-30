@@ -5,6 +5,9 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/**
+ * 设置底部的 dialog
+ */
 fun Modifier.dialog2Bottom(bottom: Dp = 30.dp) =
     this.then(Modifier.layout { measurable, constraints ->
         // 测量 dialog 真实大小

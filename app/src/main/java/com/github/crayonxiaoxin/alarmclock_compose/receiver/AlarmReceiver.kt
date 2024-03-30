@@ -9,15 +9,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
+import com.github.crayonxiaoxin.alarmclock_compose.App
 import com.github.crayonxiaoxin.alarmclock_compose.BuildConfig
-import com.github.crayonxiaoxin.alarmclock_compose.data.Repository
 import com.github.crayonxiaoxin.alarmclock_compose.model.Alarm
 import com.github.crayonxiaoxin.alarmclock_compose.service.AlarmService
 import com.github.crayonxiaoxin.alarmclock_compose.utils.AudioManager
 import com.github.crayonxiaoxin.alarmclock_compose.utils.NotificationUtil
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.util.Calendar
 
 /**
@@ -83,10 +80,9 @@ open class AlarmReceiver : BroadcastReceiver() {
 
         // 取消闹钟
         fun unsetAlarmClock(
-            context: Context?,
             requestCode: Int = 0,
         ) {
-            context?.let {
+            App.appContext.let {
                 val alarmManager = it.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
                 if (alarmManager != null) {
                     // 设置意图
@@ -106,7 +102,7 @@ open class AlarmReceiver : BroadcastReceiver() {
                         // 取消任务
                         alarmManager.cancel(pendingIntent)
                         // 取消通知和响铃
-                        removeNotify(context, requestCode)
+                        removeNotify(requestCode)
                     }
                 }
             }
@@ -114,7 +110,6 @@ open class AlarmReceiver : BroadcastReceiver() {
 
         // 取消通知和响铃
         fun removeNotify(
-            context: Context?,
             requestCode: Int = 0,
         ) {
             // 取消音乐

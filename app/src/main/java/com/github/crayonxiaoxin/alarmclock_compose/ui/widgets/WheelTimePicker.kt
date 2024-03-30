@@ -1,6 +1,5 @@
 package com.github.crayonxiaoxin.alarmclock_compose.ui.widgets
 
-import android.util.Log
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.Calendar
 
+/**
+ * 滚轮式时间选择器
+ */
 @Composable
 fun WheelTimePicker(
     hour: Int = -1,

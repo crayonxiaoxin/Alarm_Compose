@@ -30,12 +30,24 @@ data class RepeatType(
         return name
     }
 
+    /**
+     * 星期几
+     */
+    data class WeekDay(
+        val key: Int,
+        val name: String,
+        val alia: String = ""
+    )
+
     companion object {
         const val Once = "once"
         const val EveryDay = "everyday"
         const val WeekDay = "weekday"
         const val Custom = "custom"
 
+        /**
+         * 可用的重复类型列表
+         */
         val list = arrayListOf(
             RepeatType(Once, App.appContext.getString(R.string.repeat_type_once)),
             RepeatType(EveryDay, App.appContext.getString(R.string.repeat_type_everyday)),
@@ -43,6 +55,9 @@ data class RepeatType(
             RepeatType(Custom, App.appContext.getString(R.string.repeat_type_custom)),
         )
 
+        /**
+         * 可用的星期列表
+         */
         val weekdayList = arrayListOf(
             WeekDay(
                 key = 2,
@@ -83,4 +98,3 @@ data class RepeatType(
     }
 }
 
-data class WeekDay(val key: Int, val name: String, val alia: String = "")

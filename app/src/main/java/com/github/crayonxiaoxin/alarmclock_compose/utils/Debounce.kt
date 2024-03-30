@@ -1,7 +1,6 @@
 package com.github.crayonxiaoxin.alarmclock_compose.utils
 
 import android.annotation.SuppressLint
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -85,24 +84,4 @@ fun onClickDebounced(
         }
     }
     return newClick
-}
-
-@Composable
-fun BackHandlerDebounced(
-    enabled: Boolean = true,
-    delay: Long = DEFAULT_DEBOUNCE_INTERVAL,
-    onBack: () -> Unit
-) {
-    var lastClickTime by remember {
-        mutableLongStateOf(0L)
-    }
-    val currentTime = System.currentTimeMillis()
-    val newEnabled = if (enabled && currentTime - lastClickTime >= delay) {
-        lastClickTime = currentTime
-        true
-    } else enabled
-    BackHandler(
-        enabled = newEnabled,
-        onBack = onBack
-    )
 }

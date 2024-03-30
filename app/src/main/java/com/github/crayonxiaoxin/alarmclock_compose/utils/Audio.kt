@@ -15,6 +15,9 @@ object AudioManager {
 
     private var job: Job? = null
 
+    /**
+     * 从 uri 播放音乐
+     */
     fun playMp3FromUri(context: Context, uri: Uri, isLoop: Boolean = false) {
         job?.cancel()
         context.grantUriPermission(context.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -37,6 +40,9 @@ object AudioManager {
         }
     }
 
+    /**
+     * 停止播放
+     */
     fun stopMp3() {
         job?.cancel()
         if (mediaPlayer.isPlaying) {
@@ -44,9 +50,13 @@ object AudioManager {
         }
     }
 
+    /**
+     * 释放资源
+     */
     fun release() {
         stopMp3()
         mediaPlayer?.release()
     }
 }
+
 

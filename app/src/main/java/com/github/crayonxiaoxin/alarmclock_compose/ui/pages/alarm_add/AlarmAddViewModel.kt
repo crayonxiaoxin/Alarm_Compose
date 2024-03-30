@@ -43,8 +43,8 @@ class AlarmAddViewModel : ViewModel() {
             this.alarm = alarm
         }
     }
-    
-    fun sumbit(onBack:()->Unit={}){
+
+    fun submit(onBack: () -> Unit = {}) {
         val context = App.appContext
         if (uri.value == null) {
             context.toast(context.getString(R.string.pls_pick_music))
@@ -56,13 +56,14 @@ class AlarmAddViewModel : ViewModel() {
                 val time = selectedTime.value.split(":")
                 viewModelScope.launch(Dispatchers.IO) {
                     Repository.setAlarm(
-                        context = context,
-                        hour = time[0].toInt(),
-                        minute = time[1].toInt(),
-                        repeatType = repeatType.value,
-                        uri = uri.value,
-                        remark = remark.value,
-                        enable = true,
+                        alarm = Alarm(
+                            hour = time[0].toInt(),
+                            minute = time[1].toInt(),
+                            repeatType = repeatType.value,
+                            uri = uri.value?.toString(),
+                            remark = remark.value,
+                            enable = 1,
+                        ),
                     ) {
                         onBack()
                     }
@@ -76,7 +77,6 @@ class AlarmAddViewModel : ViewModel() {
                 val time = selectedTime.value.split(":")
                 viewModelScope.launch(Dispatchers.IO) {
                     Repository.updateAlarm(
-                        context = context,
                         alarm = alarm!!.copy(
                             hour = time[0].toInt(),
                             minute = time[1].toInt(),

@@ -21,7 +21,6 @@ class AlarmListViewModel : ViewModel() {
     fun updateAlarm(alarm: Alarm, status: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             Repository.updateAlarm(
-                App.appContext,
                 alarm.copy(enable = if (status) 1 else 0)
             )
         }
@@ -29,7 +28,7 @@ class AlarmListViewModel : ViewModel() {
 
     fun deleteSelectedAlarms() {
         viewModelScope.launch(Dispatchers.IO) {
-            Repository.unsetAlarms(App.appContext, deleteList.toList())
+            Repository.unsetAlarms(deleteList.toList())
             toggleDeleteMode(false)
         }
     }

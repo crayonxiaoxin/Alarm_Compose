@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.WindowManager
@@ -147,7 +146,7 @@ class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner
                             if (!alarm.repeatType.isOnce()) {
                                 // 稍微做个延迟，防止马上触发，导致死循环
                                 delay(3000L)
-                                Repository.setAlarmCycleTask(context, alarm)
+                                Repository.setAlarmCycleTask(alarm)
                             }
                         }
                     }
@@ -202,12 +201,10 @@ class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner
                                 alarmServiceScope.launch {
                                     if (alarm.repeatType.isOnce()) { // 不重复闹钟才关闭，重复闹钟依然保持开启
                                         Repository.updateAlarm(
-                                            this@AlarmService,
                                             alarm.copy(enable = 0)
                                         )
                                     } else { // 只需要移除 notification 和 停止音乐
                                         Repository.removeNotificationAndMusicOnly(
-                                            this@AlarmService,
                                             alarm
                                         )
                                     }

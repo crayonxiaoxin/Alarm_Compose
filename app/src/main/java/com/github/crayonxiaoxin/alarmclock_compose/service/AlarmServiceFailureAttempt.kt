@@ -131,12 +131,10 @@ class AlarmServiceFailureAttempt : LifecycleService(), LifecycleOwner, SavedStat
                                 alarmServiceScope.launch {
                                     if (alarm.repeatType.isOnce()) { // 不重复闹钟才关闭，重复闹钟依然保持开启
                                         Repository.updateAlarm(
-                                            this@AlarmServiceFailureAttempt,
                                             alarm.copy(enable = 0)
                                         )
                                     } else { // 只需要移除 notification 和 停止音乐
                                         Repository.removeNotificationAndMusicOnly(
-                                            this@AlarmServiceFailureAttempt,
                                             alarm
                                         )
                                     }

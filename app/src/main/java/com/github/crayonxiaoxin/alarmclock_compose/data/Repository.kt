@@ -21,33 +21,22 @@ object Repository {
     private val db = App.db
     val alarmDao = db.alarmDao()
 
-    // 设置闹钟
+    /**
+     * 设置闹钟
+     */
     suspend fun setAlarm(
-        context: Context?,
-        @IntRange(from = 0, to = 23) hour: Int = 0, // 小时
-        @IntRange(from = 0, to = 59) minute: Int = 0, // 分钟
-        repeatType: RepeatType = RepeatType.list.first(), // 重复间隔
-        uri: Uri?, // 音乐地址
-        remark: String = "", // 备注
-        enable: Boolean = true, // 是否启用
+        alarm: Alarm,
         callback: () -> Unit = {}
     ) {
+        val context = App.appContext
         // 记录在数据库中
-        val insertIds = alarmDao.insert(
-            Alarm(
-                hour = hour,
-                minute = minute,
-                repeatType = repeatType,
-                uri = uri.toString(),
-                remark = remark,
-                enable = if (enable) 1 else 0
-            )
-        )
+        val insertIds = alarmDao.insert(alarm)
         Log.e("TAG", "setAlarm: ")
         if (insertIds.isNotEmpty()) {
             val alarm = alarmDao.get(insertIds[0].toInt())
             if (alarm != null) {
-                setAlarmCycleTask(context, alarm)
+                // 运行第一个周期
+                setAlarmCycleTask(alarm)
 
                 // 返回
                 withContext(Dispatchers.Main) {
@@ -59,10 +48,8 @@ object Repository {
         }
     }
 
-    fun setAlarmCycleTask(
-        context: Context?,
-        alarm: Alarm,
-    ) {
+    fun setAlarmCycleTask(alarm: Alarm) {
+        val context = App.appContext
         val requestCode = alarm.requestCode()
         val now = System.currentTimeMillis()
         val hour = alarm.hour
@@ -95,46 +82,42 @@ object Repository {
     }
 
     // 更新闹钟
-    suspend fun updateAlarm(context: Context?, alarm: Alarm) {
+    suspend fun updateAlarm(alarm: Alarm) {
         // 更新 Alarm
         alarmDao.update(alarm)
         if (alarm.isEnable()) {
-            setAlarmCycleTask(context, alarm)
+            setAlarmCycleTask(alarm)
         } else {
-            cancelAlarm(context, alarm)
+            cancelAlarm(alarm)
         }
     }
 
     // 取消闹钟并停止音乐
-    private fun cancelAlarm(
-        context: Context?,
-        alarm: Alarm,
-    ) {
+    private fun cancelAlarm(alarm: Alarm) {
         AlarmReceiver.unsetAlarmClock(
-            context = context,
             requestCode = alarm.requestCode()
         )
     }
 
     // 仅取消通知和音乐
-    fun removeNotificationAndMusicOnly(context: Context?, alarm: Alarm) {
+    fun removeNotificationAndMusicOnly(alarm: Alarm) {
         AlarmReceiver.removeNotify(
-            context = context,
             requestCode = alarm.requestCode()
         )
     }
 
     // 删除闹钟
-    suspend fun unsetAlarm(context: Context?, alarm: Alarm) {
-        cancelAlarm(context, alarm)
+    suspend fun unsetAlarm(alarm: Alarm) {
+        val context = App.appContext
+        cancelAlarm(alarm)
         // 删除记录
         alarmDao.delete(alarm)
-        context.toast(context?.getString(R.string.alarm_canceled) ?: "")
+        context.toast(context.getString(R.string.alarm_canceled))
     }
 
-    suspend fun unsetAlarms(context: Context?, list: List<Alarm>) {
+    suspend fun unsetAlarms(list: List<Alarm>) {
         list.forEach {
-            cancelAlarm(context, it)
+            cancelAlarm(it)
         }
         // 删除记录
         alarmDao.delete(*list.toTypedArray())

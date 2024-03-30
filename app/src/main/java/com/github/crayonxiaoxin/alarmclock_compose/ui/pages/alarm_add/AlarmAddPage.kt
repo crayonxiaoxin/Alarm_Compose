@@ -1,6 +1,5 @@
 package com.github.crayonxiaoxin.alarmclock_compose.ui.pages.alarm_add
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,8 +35,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -270,7 +267,7 @@ private fun TopBar(
                 .clip(RoundedCornerShape(16.dp))
                 .clickableDebounced {
                     // 提交
-                    vm.sumbit(onBack)
+                    vm.submit(onBack)
                 }
                 .padding(8.dp))
     }

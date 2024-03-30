@@ -1,6 +1,5 @@
 package com.github.crayonxiaoxin.alarmclock_compose
 
-import android.util.Log
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -8,16 +7,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.github.crayonxiaoxin.alarmclock_compose.model.Alarm
 import com.github.crayonxiaoxin.alarmclock_compose.ui.ParamsViewModel
 import com.github.crayonxiaoxin.alarmclock_compose.ui.pages.alarm_add.AlarmAddPage
-import com.github.crayonxiaoxin.alarmclock_compose.ui.pages.alarm_add.AlarmAddViewModel
 import com.github.crayonxiaoxin.alarmclock_compose.ui.pages.alarm_list.AlarmListPage
 import com.github.crayonxiaoxin.alarmclock_compose.ui.pages.alarm_repeat_type.RepeatTypePage
 

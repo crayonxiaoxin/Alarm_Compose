@@ -164,7 +164,7 @@ open class AlarmReceiverFailureAttempt : BroadcastReceiver() {
                             startService(context, it)
                             // 为重复闹钟继续发送广播
                             if (!alarm.repeatType.isOnce()) {
-                                Repository.setAlarmCycleTask(context, alarm)
+                                Repository.setAlarmCycleTask(alarm)
                             }
                         }
                     }
