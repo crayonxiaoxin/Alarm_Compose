@@ -54,7 +54,7 @@ class AlarmAddViewModel : ViewModel() {
                 uri.value = context.copyFile(uri.value)
                 // 设置闹钟并保存到数据库
                 val time = selectedTime.value.split(":")
-                viewModelScope.launch {
+                viewModelScope.launch(Dispatchers.IO) {
                     Repository.setAlarm(
                         context = context,
                         hour = time[0].toInt(),
@@ -74,7 +74,7 @@ class AlarmAddViewModel : ViewModel() {
                 }
                 // 设置闹钟并保存到数据库
                 val time = selectedTime.value.split(":")
-                viewModelScope.launch {
+                viewModelScope.launch(Dispatchers.IO) {
                     Repository.updateAlarm(
                         context = context,
                         alarm = alarm!!.copy(

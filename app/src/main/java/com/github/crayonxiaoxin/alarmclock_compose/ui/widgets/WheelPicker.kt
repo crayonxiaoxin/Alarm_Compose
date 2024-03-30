@@ -51,7 +51,6 @@ fun <T> WheelPicker(
         val diff = tmpIndex - startIndex
         startIndex = half - diff
     }
-    Log.e("TAG", "WheelPicker: $selectedIndex, $startIndex")
     val lazyListState = rememberLazyListState(initialFirstVisibleItemIndex = startIndex)
     // 滚动监听
     LaunchedEffect(lazyListState) {

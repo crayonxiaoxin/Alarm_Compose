@@ -5,18 +5,15 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import com.github.crayonxiaoxin.alarmclock_compose.BuildConfig
-import com.github.crayonxiaoxin.alarmclock_compose.R
 import com.github.crayonxiaoxin.alarmclock_compose.data.Repository
 import com.github.crayonxiaoxin.alarmclock_compose.model.Alarm
 import com.github.crayonxiaoxin.alarmclock_compose.service.AlarmService
 import com.github.crayonxiaoxin.alarmclock_compose.utils.AudioManager
-import com.github.crayonxiaoxin.alarmclock_compose.utils.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,7 +39,6 @@ open class AlarmReceiver : BroadcastReceiver() {
         fun setAlarmClock(
             context: Context?,
             timestamp: Long = System.currentTimeMillis(),
-            interval: Long = 1000 * 60 * 1,
             requestCode: Int = 0,
         ) {
             context?.let {
@@ -69,24 +65,15 @@ open class AlarmReceiver : BroadcastReceiver() {
                         timeInMillis = timestamp
                     }
 
-                    if (interval > 0) { // 重复执行
-                        alarmManager.setRepeating(
-                            AlarmManager.RTC_WAKEUP, // 可唤醒设备
-                            calendar.timeInMillis, // 第一次调用
-                            interval,// 重复调用的间隔
-                            pendingIntent, // 意图
-                        )
-                    } else { // 只执行一次
-                        val now = System.currentTimeMillis()
-                        val next = calendar.timeInMillis
-                        var delay = next - now
-                        delay = if (delay > 0) delay else 0
-                        val triggerAtTime = SystemClock.elapsedRealtime() + delay
-                        // 保证低电耗模式运行
-                        alarmManager.setExactAndAllowWhileIdle(
-                            AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtTime, pendingIntent
-                        )
-                    }
+                    val now = System.currentTimeMillis()
+                    val next = calendar.timeInMillis
+                    var delay = next - now
+                    delay = if (delay > 0) delay else 0
+                    val triggerAtTime = SystemClock.elapsedRealtime() + delay
+                    // 保证低电耗模式运行 [此处不能使用 setRepeating，高版本不会被执行]
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtTime, pendingIntent
+                    )
 
                     Log.e(TAG, "setAlarm: ")
                 }
@@ -154,7 +141,7 @@ open class AlarmReceiver : BroadcastReceiver() {
                 Log.e(TAG, "onReceive: 收到设置的闹钟 - 判断是否符合触发条件")
 
                 intent.extras?.let {
-                    // 判断 alarm 是否符合条件再启动 service
+                    // FixMe: [处于后台时，此方法不可行] 判断 alarm 是否符合条件再启动 service
                     val alarmId = intent.getIntExtra(AlarmReceiver.EXTRA_ALARM_ID, 0)
                     receiverScope.launch {
                         val alarm = Repository.alarmDao.get(alarmId) ?: return@launch
@@ -175,6 +162,10 @@ open class AlarmReceiver : BroadcastReceiver() {
                             }
                             // 符合条件，启动服务
                             startService(context, it)
+                            // 为重复闹钟继续发送广播
+                            if (!alarm.repeatType.isOnce()) {
+                                Repository.setAlarmCycleTask(context, alarm)
+                            }
                         }
                     }
                 }

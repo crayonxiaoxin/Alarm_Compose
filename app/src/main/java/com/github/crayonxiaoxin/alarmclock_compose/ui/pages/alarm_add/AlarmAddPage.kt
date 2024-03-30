@@ -108,7 +108,6 @@ fun AlarmAddPage(
                 hour = if (vm.alarm == null) -1 else vm.alarm!!.hour,
                 minute = if (vm.alarm == null) -1 else vm.alarm!!.minute,
             ) {
-                Log.e("TAG", "AlarmAddPage: $it")
                 vm.selectedTime.value = it
             }
 
@@ -167,10 +166,6 @@ fun AlarmAddPage(
 
             // 备注
             if (showRemarkDialogState.value) {
-                val a = with(LocalDensity.current) {
-                    LocalConfiguration.current.navigation.dp
-                }
-                Log.e("TAG", "AlarmAddPage: navigation dp: $a")
                 AlertDialog(
                     modifier = Modifier.dialog2Bottom(30.dp),
                     shape = RoundedCornerShape(30.dp),

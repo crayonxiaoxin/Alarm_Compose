@@ -38,8 +38,6 @@ fun WheelTimePicker(
         }
     }
 
-    Log.e("TAG", "WheelTimePicker: $hour,$minute")
-
     // 当前日历
     val c = Calendar.getInstance()
 

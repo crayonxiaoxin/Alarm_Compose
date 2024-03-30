@@ -47,39 +47,7 @@ object Repository {
         if (insertIds.isNotEmpty()) {
             val alarm = alarmDao.get(insertIds[0].toInt())
             if (alarm != null) {
-                val requestCode = alarm.requestCode()
-                val now = System.currentTimeMillis()
-                val calendar = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, hour)
-                    set(Calendar.MINUTE, minute)
-                }
-                // 闹钟时间
-                val alarmTime = calendar.timeInMillis
-
-                val newTimestamp = if (now <= alarmTime) { // 未到时间，正常执行
-                    Log.e("TAG", "setAlarm: 未到时间，正常执行")
-                    alarmTime
-                } else { // 执行下一个周期
-                    Log.e("TAG", "setAlarm: 已过时间，执行下一个周期")
-                    calendar.add(Calendar.DAY_OF_MONTH, 1)
-                    calendar.set(Calendar.HOUR_OF_DAY, hour)
-                    calendar.set(Calendar.MINUTE, minute)
-                    calendar.timeInMillis
-                }
-
-                val interval: Long = if (alarm.repeatType.isOnce()) { // 一次性闹钟
-                    0L
-                } else { // 其他都当是每天重复的闹钟
-                    1000 * 60 * 60 * 24
-                }
-
-                // 设置闹钟
-                AlarmReceiver.setAlarmClock(
-                    context = context,
-                    timestamp = newTimestamp,
-                    interval = interval,
-                    requestCode = requestCode,
-                )
+                setAlarmCycleTask(context, alarm)
 
                 // 返回
                 withContext(Dispatchers.Main) {
@@ -91,43 +59,46 @@ object Repository {
         }
     }
 
+    fun setAlarmCycleTask(
+        context: Context?,
+        alarm: Alarm,
+    ) {
+        val requestCode = alarm.requestCode()
+        val now = System.currentTimeMillis()
+        val hour = alarm.hour
+        val minute = alarm.minute
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+        }
+        // 闹钟时间
+        val alarmTime = calendar.timeInMillis
+
+        val newTimestamp = if (now <= alarmTime) { // 未到时间，正常执行
+            Log.e("TAG", "setAlarm: 未到时间，正常执行")
+            alarmTime
+        } else { // 执行下一个周期
+            Log.e("TAG", "setAlarm: 已过时间，执行下一个周期")
+            calendar.add(Calendar.DAY_OF_MONTH, 1)
+            calendar.set(Calendar.HOUR_OF_DAY, hour)
+            calendar.set(Calendar.MINUTE, minute)
+            calendar.timeInMillis
+        }
+
+        // 设置闹钟
+        AlarmReceiver.setAlarmClock(
+            context = context,
+            timestamp = newTimestamp,
+            requestCode = requestCode,
+        )
+    }
+
     // 更新闹钟
     suspend fun updateAlarm(context: Context?, alarm: Alarm) {
         // 更新 Alarm
         alarmDao.update(alarm)
         if (alarm.isEnable()) {
-            val now = System.currentTimeMillis()
-            val calendar = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, alarm.hour)
-                set(Calendar.MINUTE, alarm.minute)
-            }
-            // 闹钟时间
-            val alarmTime = calendar.timeInMillis
-
-            val newTimestamp = if (now <= alarmTime) { // 未到时间，正常执行
-                Log.e("TAG", "setAlarm: 未到时间，正常执行")
-                alarmTime
-            } else { // 执行下一个周期
-                Log.e("TAG", "setAlarm: 已过时间，执行下一个周期")
-                calendar.add(Calendar.DAY_OF_MONTH, 1)
-                calendar.set(Calendar.HOUR_OF_DAY, alarm.hour)
-                calendar.set(Calendar.MINUTE, alarm.minute)
-                calendar.timeInMillis
-            }
-
-            val interval: Long = if (alarm.repeatType.isOnce()) { // 一次性闹钟
-                0L
-            } else { // 其他都当是每天重复的闹钟
-                1000 * 60 * 60 * 24
-            }
-
-            // 设置闹钟
-            AlarmReceiver.setAlarmClock(
-                context = context,
-                timestamp = newTimestamp,
-                interval = interval,
-                requestCode = alarm.requestCode(),
-            )
+            setAlarmCycleTask(context, alarm)
         } else {
             cancelAlarm(context, alarm)
         }

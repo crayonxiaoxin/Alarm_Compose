@@ -290,8 +290,6 @@ private fun TopBar(
                             if (it.isCustom()) {
                                 it.customWeekdayList = weekdaySelectedListState.toList()
                             }
-                            // 提交
-                            Log.e("TAG", "AlarmAddPage: $it")
                             // 给上一个页面返回参数
                             paramsViewModel.alarmAddViewModel.repeatType.value = it
                             onBack()

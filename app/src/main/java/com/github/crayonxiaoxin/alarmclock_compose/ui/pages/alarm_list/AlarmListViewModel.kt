@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.crayonxiaoxin.alarmclock_compose.App
 import com.github.crayonxiaoxin.alarmclock_compose.data.Repository
 import com.github.crayonxiaoxin.alarmclock_compose.model.Alarm
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -18,7 +19,7 @@ class AlarmListViewModel : ViewModel() {
     private val deleteList = mutableStateListOf<Alarm>()
 
     fun updateAlarm(alarm: Alarm, status: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             Repository.updateAlarm(
                 App.appContext,
                 alarm.copy(enable = if (status) 1 else 0)
@@ -27,7 +28,7 @@ class AlarmListViewModel : ViewModel() {
     }
 
     fun deleteSelectedAlarms() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             Repository.unsetAlarms(App.appContext, deleteList.toList())
             toggleDeleteMode(false)
         }
@@ -49,7 +50,7 @@ class AlarmListViewModel : ViewModel() {
     }
 
     fun selectAllDeleteItems() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             list.collectLatest {
                 if (deleteList.size == it.size) {
                     deleteList.removeAll(it)
