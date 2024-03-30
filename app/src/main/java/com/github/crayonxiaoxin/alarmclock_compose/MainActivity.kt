@@ -33,6 +33,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.github.crayonxiaoxin.alarmclock_compose.service.AlarmService
 import com.github.crayonxiaoxin.alarmclock_compose.ui.theme.AlarmClock_ComposeTheme
 
 class MainActivity : ComponentActivity() {
@@ -50,7 +51,12 @@ class MainActivity : ComponentActivity() {
 
             val requestPermissions =
                 rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestMultiplePermissions()) {
-
+                    val intent = Intent(this, AlarmService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
                 }
             val requestOverlayPermission =
                 rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {

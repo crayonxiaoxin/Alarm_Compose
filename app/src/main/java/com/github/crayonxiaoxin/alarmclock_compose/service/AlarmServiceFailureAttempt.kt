@@ -2,9 +2,7 @@ package com.github.crayonxiaoxin.alarmclock_compose.service
 
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.PixelFormat
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.WindowManager
@@ -34,7 +32,6 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.github.crayonxiaoxin.alarmclock_compose.BuildConfig
 import com.github.crayonxiaoxin.alarmclock_compose.MainActivity
 import com.github.crayonxiaoxin.alarmclock_compose.R
 import com.github.crayonxiaoxin.alarmclock_compose.data.Repository
@@ -44,14 +41,12 @@ import com.github.crayonxiaoxin.alarmclock_compose.utils.AudioManager
 import com.github.crayonxiaoxin.alarmclock_compose.utils.NotificationUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Calendar
 
 /**
  * 闹钟 - 前台服务，播放音乐
  */
-class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner {
+class AlarmServiceFailureAttempt : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner {
 
     private val alarmServiceScope = CoroutineScope(Dispatchers.IO)
     private val TAG = this.javaClass.name
@@ -64,115 +59,48 @@ class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner
     }
 
     override fun onDestroy() {
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        unregisterReceiver(alarmReceiver)
         super.onDestroy()
+        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        super.onStartCommand(intent, flags, startId)
-        configForeground()  // 前台服务
-        configReceiver()    // 广播接收
-        return START_STICKY
-    }
+        intent?.let {
+            val alarmId = intent.getIntExtra(AlarmReceiver.EXTRA_ALARM_ID, 0)
+            alarmServiceScope.launch {
+                // 获取闹钟对象
+                val alarm = Repository.alarmDao.get(alarmId) ?: return@launch
 
-    private fun configForeground() {
-        val pendingIntent = NotificationUtil.pendingIntent(
-            intent = Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-        )
-        val notification = NotificationUtil.show(
-            title = "前台服务运行中",
-            autoCancel = false,
-            contentIntent = pendingIntent,
-            show = false
-        )
-        startForeground(BuildConfig.VERSION_CODE, notification)
-    }
+                // 发出通知
+                val pendingIntent = NotificationUtil.pendingIntent(Intent(
+                    this@AlarmServiceFailureAttempt, MainActivity::class.java
+                ).apply {
+                    this.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    this.action = AlarmReceiver.ACTION_ALARM_CLOCK + "_receive"
+                })
+                val notification = NotificationUtil.show(
+                    title = getString(R.string.app_name),
+                    content = alarm.content(),
+                    notifyID = alarm.requestCode(),
+                    contentIntent = pendingIntent,
+                    autoCancel = false,
+                    show = false
+                )
+                startForeground(alarm.requestCode(), notification)
 
-    private val alarmReceiver = object : AlarmReceiver() {
-        private val TAG = "AlarmReceiver"
-
-        override fun onReceive(context: Context?, intent: Intent?) {
-            Log.e(TAG, "onReceive: $intent")
-            if (context == null || intent == null) return
-            when (intent.action) {
-                ACTION_ALARM_CLOCK -> {
-                    Log.e(TAG, "onReceive: 收到设置的闹钟")
-                    val alarmId = intent.getIntExtra(EXTRA_ALARM_ID, 0)
-                    alarmServiceScope.launch {
-                        val alarm = Repository.alarmDao.get(alarmId) ?: return@launch
-
-                        val calendar = Calendar.getInstance()
-                        // 今天是星期几
-                        val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK) // 从 1:星期天 开始
-                        if (alarm.isEnable()) {
-                            if (alarm.repeatType.isWeekDay()) { // 周一至周五
-                                val range = 2..6
-                                if (!range.contains(dayOfWeek)) { // 今天不在周一至周五范围
-                                    return@launch
-                                }
-                            } else if (alarm.repeatType.isCustom()) { // 自定义星期几
-                                val range = alarm.repeatType.customWeekdayList
-                                if (!range.contains(dayOfWeek)) { // 今天不在自定义星期范围
-                                    return@launch
-                                }
-                            }
-                            // 符合条件，发出通知并播放音乐
-                            // 发出通知
-                            val pendingIntent = NotificationUtil.pendingIntent(Intent(
-                                context, MainActivity::class.java
-                            ).apply {
-                                this.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                                this.action = ACTION_ALARM_CLOCK + "_receive"
-                            })
-                            val title = alarm.remark.ifEmpty { getString(R.string.app_name) }
-                            NotificationUtil.show(
-                                title,
-                                alarm.content(),
-                                alarm.requestCode(),
-                                contentIntent = pendingIntent
-                            )
-                            // 获取音乐 uri
-                            val musicUri = alarm.toUri()
-                            Log.e(TAG, "onReceive: uri => $musicUri")
-                            // 播放音乐
-                            musicUri?.let {
-                                AudioManager.playMp3FromUri(this@AlarmService, musicUri, true)
-                            }
-                            // 做 callback 提醒 ui
-                            onAlarmTriggered(alarm)
-                            // 为重复闹钟继续发送广播
-                            if (!alarm.repeatType.isOnce()) {
-                                // 稍微做个延迟，防止马上触发，导致死循环
-                                delay(3000L)
-                                Repository.setAlarmCycleTask(context, alarm)
-                            }
-                        }
-                    }
+                // 获取音乐 uri
+                val musicUri = alarm.toUri()
+                Log.e(TAG, "onReceive: uri => $musicUri")
+                // 播放音乐
+                musicUri?.let {
+                    AudioManager.playMp3FromUri(this@AlarmServiceFailureAttempt, musicUri, true)
                 }
 
-                else -> {
-                    Log.e(TAG, "$intent")
-                }
+                // 做 callback 提醒 ui
+                onAlarmTriggered(alarm)
             }
-
         }
-    }
 
-
-    private fun configReceiver() {
-        val intentFilter = IntentFilter().apply {
-            addAction(AlarmReceiver.ACTION_ALARM_CLOCK)
-            addCategory("android.intent.category.DEFAULT")
-            priority = Int.MAX_VALUE
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(alarmReceiver, intentFilter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(alarmReceiver, intentFilter)
-        }
+        return super.onStartCommand(intent, flags, startId)
     }
 
     private fun onAlarmTriggered(alarm: Alarm) {
@@ -192,27 +120,27 @@ class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner
                     PixelFormat.TRANSLUCENT
                 )
 
-                val dialog = ComposeView(context = this@AlarmService).apply {
-                    setViewTreeSavedStateRegistryOwner(this@AlarmService)
-                    setViewTreeLifecycleOwner(this@AlarmService)
+                val dialog = ComposeView(context = this@AlarmServiceFailureAttempt).apply {
+                    setViewTreeSavedStateRegistryOwner(this@AlarmServiceFailureAttempt)
+                    setViewTreeLifecycleOwner(this@AlarmServiceFailureAttempt)
                     setContent {
                         AlarmDialog(
                             alarm = alarm,
                             onCancelClick = {
+                                windowManager.removeView(this)
                                 alarmServiceScope.launch {
                                     if (alarm.repeatType.isOnce()) { // 不重复闹钟才关闭，重复闹钟依然保持开启
                                         Repository.updateAlarm(
-                                            this@AlarmService,
+                                            this@AlarmServiceFailureAttempt,
                                             alarm.copy(enable = 0)
                                         )
                                     } else { // 只需要移除 notification 和 停止音乐
                                         Repository.removeNotificationAndMusicOnly(
-                                            this@AlarmService,
+                                            this@AlarmServiceFailureAttempt,
                                             alarm
                                         )
                                     }
                                 }
-                                windowManager.removeView(this@apply)
                             }
                         )
                     }
@@ -228,7 +156,6 @@ class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner
         alarm: Alarm,
         onCancelClick: () -> Unit = {}
     ) {
-        val title = alarm.remark.ifEmpty { getString(R.string.app_name) }
         Column(
             modifier = Modifier
                 .padding(20.dp)
@@ -237,7 +164,7 @@ class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner
                 .padding(16.dp)
         ) {
             Text(
-                text = title,
+                text = getString(R.string.app_name),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Black,
                 modifier = Modifier.fillMaxWidth(),

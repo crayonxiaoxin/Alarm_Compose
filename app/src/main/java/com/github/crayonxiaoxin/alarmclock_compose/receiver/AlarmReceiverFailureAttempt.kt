@@ -14,7 +14,6 @@ import com.github.crayonxiaoxin.alarmclock_compose.data.Repository
 import com.github.crayonxiaoxin.alarmclock_compose.model.Alarm
 import com.github.crayonxiaoxin.alarmclock_compose.service.AlarmService
 import com.github.crayonxiaoxin.alarmclock_compose.utils.AudioManager
-import com.github.crayonxiaoxin.alarmclock_compose.utils.NotificationUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,7 +22,7 @@ import java.util.Calendar
 /**
  * 闹钟 - 广播接收器
  */
-open class AlarmReceiver : BroadcastReceiver() {
+open class AlarmReceiverFailureAttempt : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "AlarmReceiver"
@@ -46,7 +45,7 @@ open class AlarmReceiver : BroadcastReceiver() {
                 val alarmManager = it.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
                 if (alarmManager != null) {
                     // 设置意图
-                    val intent = Intent(it, AlarmReceiver::class.java).apply {
+                    val intent = Intent(it, AlarmReceiverFailureAttempt::class.java).apply {
                         setPackage(it.packageName)
                         action = ACTION_ALARM_CLOCK
                         putExtra(EXTRA_ALARM_ID, Alarm.idFromRequestCode(requestCode))
@@ -90,7 +89,7 @@ open class AlarmReceiver : BroadcastReceiver() {
                 val alarmManager = it.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
                 if (alarmManager != null) {
                     // 设置意图
-                    val intent = Intent(it, AlarmReceiver::class.java).apply {
+                    val intent = Intent(it, AlarmReceiverFailureAttempt::class.java).apply {
                         setPackage(it.packageName)
                         action = ACTION_ALARM_CLOCK
                         putExtra(EXTRA_ALARM_ID, Alarm.idFromRequestCode(requestCode))
@@ -120,9 +119,16 @@ open class AlarmReceiver : BroadcastReceiver() {
             // 取消音乐
             AudioManager.stopMp3()
             // 取消通知
-            NotificationUtil.hide(requestCode)
+//            NotificationUtil.hide(requestCode)
+            // 停止前台服务
+            context?.let {
+                val serviceIntent = Intent(it, AlarmService::class.java)
+                it.stopService(serviceIntent)
+            }
         }
     }
+
+    private val receiverScope = CoroutineScope(Dispatchers.IO)
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
@@ -132,12 +138,37 @@ open class AlarmReceiver : BroadcastReceiver() {
             }
 
             ACTION_ALARM_CLOCK -> {
-                Log.e(TAG, "onReceive: 收到设置的闹钟 - 转发")
-                // 转发给动态注册的 receiver
-                context.sendBroadcast(Intent().apply {
-                    action = ACTION_ALARM_CLOCK
-                    intent.extras?.let { putExtras(it) }
-                })
+                Log.e(TAG, "onReceive: 收到设置的闹钟 - 判断是否符合触发条件")
+
+                intent.extras?.let {
+                    // FixMe: [处于后台时，此方法不可行] 判断 alarm 是否符合条件再启动 service
+                    val alarmId = intent.getIntExtra(AlarmReceiver.EXTRA_ALARM_ID, 0)
+                    receiverScope.launch {
+                        val alarm = Repository.alarmDao.get(alarmId) ?: return@launch
+                        val calendar = Calendar.getInstance()
+                        // 今天是星期几
+                        val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK) // 从 1:星期天 开始
+                        if (alarm.isEnable()) {
+                            if (alarm.repeatType.isWeekDay()) { // 周一至周五
+                                val range = 2..6
+                                if (!range.contains(dayOfWeek)) { // 今天不在周一至周五范围
+                                    return@launch
+                                }
+                            } else if (alarm.repeatType.isCustom()) { // 自定义星期几
+                                val range = alarm.repeatType.customWeekdayList
+                                if (!range.contains(dayOfWeek)) { // 今天不在自定义星期范围
+                                    return@launch
+                                }
+                            }
+                            // 符合条件，启动服务
+                            startService(context, it)
+                            // 为重复闹钟继续发送广播
+                            if (!alarm.repeatType.isOnce()) {
+                                Repository.setAlarmCycleTask(context, alarm)
+                            }
+                        }
+                    }
+                }
             }
 
             else -> {

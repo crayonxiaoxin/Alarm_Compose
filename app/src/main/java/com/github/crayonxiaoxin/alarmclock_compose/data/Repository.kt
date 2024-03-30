@@ -70,6 +70,7 @@ object Repository {
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
         }
         // 闹钟时间
         val alarmTime = calendar.timeInMillis
