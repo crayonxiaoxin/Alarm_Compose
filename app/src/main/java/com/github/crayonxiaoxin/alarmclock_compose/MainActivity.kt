@@ -10,18 +10,17 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.view.WindowInsetsController
+import android.view.Gravity
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
@@ -33,16 +32,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.DisableNonLinearFontScalingInCompose
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowInsetsControllerCompat
 import com.github.crayonxiaoxin.alarmclock_compose.service.AlarmService
 import com.github.crayonxiaoxin.alarmclock_compose.ui.theme.AlarmClock_ComposeTheme
+import com.github.crayonxiaoxin.alarmclock_compose.ui.widgets.CustomAlertDialog
 
 class MainActivity : ComponentActivity() {
 
@@ -107,24 +104,9 @@ class MainActivity : ComponentActivity() {
 
         // 悬浮窗权限
         if (showOverlayDialogState.value) {
-            AlertDialog(
-                modifier = Modifier
-                    .layout { measurable, constraints ->
-                        // 测量 dialog 真实大小
-                        val placeable = measurable.measure(constraints)
-                        // 距离底部的偏移
-                        val offset = 30.dp
-                            .toPx()
-                            .toInt()
-                        // 摆放到底部
-                        layout(constraints.maxWidth, constraints.maxHeight) {
-                            placeable.place(
-                                0,
-                                constraints.maxHeight - placeable.height - offset,
-                                10f
-                            )
-                        }
-                    },
+            CustomAlertDialog(
+                modifier = Modifier.padding(bottom = 30.dp),
+                gravity = Gravity.BOTTOM,
                 shape = RoundedCornerShape(30.dp),
                 onDismissRequest = {
                     showOverlayDialogState.value = false
