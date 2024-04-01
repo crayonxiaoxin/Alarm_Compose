@@ -65,11 +65,12 @@ object Repository {
         val newTimestamp = if (now <= alarmTime) { // 未到时间，正常执行
             Log.e("TAG", "setAlarm: 未到时间，正常执行")
             alarmTime
-        } else { // 执行下一个周期
+        } else { // 已过时间，执行下一个周期
             Log.e("TAG", "setAlarm: 已过时间，执行下一个周期")
             calendar.add(Calendar.DAY_OF_MONTH, 1)
             calendar.set(Calendar.HOUR_OF_DAY, hour)
             calendar.set(Calendar.MINUTE, minute)
+            calendar.set(Calendar.SECOND, 0)
             calendar.timeInMillis
         }
 

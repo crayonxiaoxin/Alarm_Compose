@@ -1,6 +1,7 @@
 package com.github.crayonxiaoxin.alarmclock_compose.ui.pages.alarm_repeat_type
 
 import android.util.Log
+import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Icon
@@ -44,9 +44,9 @@ import androidx.navigation.NavHostController
 import com.github.crayonxiaoxin.alarmclock_compose.R
 import com.github.crayonxiaoxin.alarmclock_compose.model.RepeatType
 import com.github.crayonxiaoxin.alarmclock_compose.ui.ParamsViewModel
+import com.github.crayonxiaoxin.alarmclock_compose.ui.widgets.CustomAlertDialog
 import com.github.crayonxiaoxin.alarmclock_compose.ui.widgets.SelectedIcon
 import com.github.crayonxiaoxin.alarmclock_compose.utils.clickableDebounced
-import com.github.crayonxiaoxin.alarmclock_compose.utils.dialog2Bottom
 import com.github.crayonxiaoxin.alarmclock_compose.utils.onClickDebounced
 
 
@@ -179,7 +179,9 @@ private fun RepeatTypeItem(
         }
     }
     if (isCustomExpandedState.value && item.isCustom()) {
-        AlertDialog(modifier = Modifier.dialog2Bottom(30.dp),
+        CustomAlertDialog(
+            modifier = Modifier.padding(bottom = 30.dp),
+            gravity = Gravity.BOTTOM,
             shape = RoundedCornerShape(30.dp),
             onDismissRequest = {
                 isCustomExpandedState.value = false

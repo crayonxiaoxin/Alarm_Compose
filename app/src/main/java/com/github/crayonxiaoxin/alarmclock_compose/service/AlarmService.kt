@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -85,7 +86,8 @@ class AlarmService : LifecycleService(), LifecycleOwner, SavedStateRegistryOwner
             title = "前台服务运行中",
             autoCancel = false,
             contentIntent = pendingIntent,
-            show = false
+            show = false,
+            priority = NotificationCompat.PRIORITY_DEFAULT
         )
         startForeground(BuildConfig.VERSION_CODE, notification)
     }

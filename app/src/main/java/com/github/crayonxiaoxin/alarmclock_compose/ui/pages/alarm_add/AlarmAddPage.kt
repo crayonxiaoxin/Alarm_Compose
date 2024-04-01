@@ -1,5 +1,6 @@
 package com.github.crayonxiaoxin.alarmclock_compose.ui.pages.alarm_add
 
+import android.view.Gravity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -36,6 +38,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,6 +46,7 @@ import androidx.navigation.NavHostController
 import com.github.crayonxiaoxin.alarmclock_compose.R
 import com.github.crayonxiaoxin.alarmclock_compose.Routes
 import com.github.crayonxiaoxin.alarmclock_compose.ui.ParamsViewModel
+import com.github.crayonxiaoxin.alarmclock_compose.ui.widgets.CustomAlertDialog
 import com.github.crayonxiaoxin.alarmclock_compose.ui.widgets.SettingItem
 import com.github.crayonxiaoxin.alarmclock_compose.ui.widgets.WheelTimePicker
 import com.github.crayonxiaoxin.alarmclock_compose.utils.clickableDebounced
@@ -163,8 +167,9 @@ fun AlarmAddPage(
 
             // 备注
             if (showRemarkDialogState.value) {
-                AlertDialog(
-                    modifier = Modifier.dialog2Bottom(30.dp),
+                CustomAlertDialog(
+                    modifier = Modifier.padding(bottom = 30.dp),
+                    gravity = Gravity.BOTTOM,
                     shape = RoundedCornerShape(30.dp),
                     onDismissRequest = {
                         showRemarkDialogState.value = false
@@ -217,6 +222,7 @@ fun AlarmAddPage(
                                 onValueChange = {
                                     vm.remark.value = it
                                 },
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.focusRequester(remarkFocusRequest)
                             )

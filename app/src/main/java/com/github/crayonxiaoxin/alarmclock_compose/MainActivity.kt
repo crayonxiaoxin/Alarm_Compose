@@ -10,12 +10,14 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,20 +26,27 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DisableNonLinearFontScalingInCompose
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowInsetsControllerCompat
 import com.github.crayonxiaoxin.alarmclock_compose.service.AlarmService
 import com.github.crayonxiaoxin.alarmclock_compose.ui.theme.AlarmClock_ComposeTheme
 
 class MainActivity : ComponentActivity() {
 
+    // 需要的权限
     private val permissions = arrayOf(
         Manifest.permission.POST_NOTIFICATIONS,
         Manifest.permission.SCHEDULE_EXACT_ALARM,
@@ -58,101 +67,120 @@ class MainActivity : ComponentActivity() {
                         startService(intent)
                     }
                 }
-            val requestOverlayPermission =
-                rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
 
-                }
 
             // 申请权限
             LaunchedEffect(Unit) {
                 requestPermissions.launch(permissions)
             }
 
-            val showOverlayDialogState = remember {
-                mutableStateOf(!checkOverlayPermission())
+            // 申请悬浮窗权限
+            RequestOverlayDialog()
+
+            // 主体
+            AlarmClock_ComposeTheme {
+                // 树作用域：向下传递隐式数据流
+                CompositionLocalProvider(
+                    // 更改 Density，使 .sp 不跟随系统缩放
+                    LocalDensity provides Density(LocalDensity.current.density, 1f)
+                ) {
+                    Navigation()
+                }
+            }
+        }
+    }
+
+    /**
+     * 悬浮窗权限 dialog
+     */
+    @Composable
+    private fun RequestOverlayDialog() {
+        val requestOverlayPermission =
+            rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
+
             }
 
-            // 悬浮窗权限
-            if (showOverlayDialogState.value) {
-                AlertDialog(
-                    modifier = Modifier
-                        .layout { measurable, constraints ->
-                            // 测量 dialog 真实大小
-                            val placeable = measurable.measure(constraints)
-                            // 距离底部的偏移
-                            val offset = 30.dp
-                                .toPx()
-                                .toInt()
-                            // 摆放到底部
-                            layout(constraints.maxWidth, constraints.maxHeight) {
-                                placeable.place(
-                                    0,
-                                    constraints.maxHeight - placeable.height - offset,
-                                    10f
-                                )
-                            }
-                        },
-                    shape = RoundedCornerShape(30.dp),
-                    onDismissRequest = {
-                        showOverlayDialogState.value = false
-                    },
-                    confirmButton = {
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Button(
-                                modifier = Modifier
-                                    .weight(1.0f),
-                                colors = ButtonColors(
-                                    containerColor = Color.LightGray.copy(alpha = 0.2f),
-                                    contentColor = MaterialTheme.colorScheme.onBackground,
-                                    disabledContainerColor = Color.LightGray,
-                                    disabledContentColor = Color.White
-                                ),
-                                onClick = {
-                                    showOverlayDialogState.value = false
-                                }) {
-                                Text(text = stringResource(id = R.string.cancel))
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Button(
-                                modifier = Modifier.weight(1.0f),
-                                onClick = {
-                                    showOverlayDialogState.value = false
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        requestOverlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
-                                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                        requestOverlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                            data = Uri.parse("package:${packageName}")
-                                        })
-                                    }
-                                }) {
-                                Text(text = stringResource(id = R.string.confirm))
-                            }
+        // 悬浮窗申请弹窗的状态
+        val showOverlayDialogState = remember {
+            mutableStateOf(!checkOverlayPermission())
+        }
+
+        // 悬浮窗权限
+        if (showOverlayDialogState.value) {
+            AlertDialog(
+                modifier = Modifier
+                    .layout { measurable, constraints ->
+                        // 测量 dialog 真实大小
+                        val placeable = measurable.measure(constraints)
+                        // 距离底部的偏移
+                        val offset = 30.dp
+                            .toPx()
+                            .toInt()
+                        // 摆放到底部
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            placeable.place(
+                                0,
+                                constraints.maxHeight - placeable.height - offset,
+                                10f
+                            )
                         }
                     },
-                    title = {
-                        Text(
-                            text = stringResource(R.string.permission_overlay),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.Black,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = stringResource(R.string.permission_overlay_content),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Black,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                        )
+                shape = RoundedCornerShape(30.dp),
+                onDismissRequest = {
+                    showOverlayDialogState.value = false
+                },
+                confirmButton = {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Button(
+                            modifier = Modifier
+                                .weight(1.0f),
+                            colors = ButtonColors(
+                                containerColor = Color.LightGray.copy(alpha = 0.2f),
+                                contentColor = MaterialTheme.colorScheme.onBackground,
+                                disabledContainerColor = Color.LightGray,
+                                disabledContentColor = Color.White
+                            ),
+                            onClick = {
+                                showOverlayDialogState.value = false
+                            }) {
+                            Text(text = stringResource(id = R.string.cancel))
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Button(
+                            modifier = Modifier.weight(1.0f),
+                            onClick = {
+                                showOverlayDialogState.value = false
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    requestOverlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                    requestOverlayPermission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                                        data = Uri.parse("package:${packageName}")
+                                    })
+                                }
+                            }) {
+                            Text(text = stringResource(id = R.string.confirm))
+                        }
                     }
-                )
-            }
-
-            AlarmClock_ComposeTheme {
-                Navigation()
-            }
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.permission_overlay),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Black,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(R.string.permission_overlay_content),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            )
         }
     }
 
