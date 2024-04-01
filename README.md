@@ -1,5 +1,5 @@
 ### 基于 Jetpack Compose 的仿小米闹钟
 
-<video width="300" controls>
-    <source src="https://github.com/crayonxiaoxin/Alarm_Compose/blob/main/demo/demo.mp4" type="video/mp4">
-</video>
+
+https://github.com/crayonxiaoxin/Alarm_Compose/assets/35017508/4b9defb6-8242-4dab-9712-dd1d17c1438f
+
