@@ -21,7 +21,10 @@ data class RepeatType(
     fun nameFmt(): String {
         if (isCustom()) {
             if (customWeekdayList.isNotEmpty()) {
-                val alias = customWeekdayList.map { key ->
+                val alias = customWeekdayList.sortedBy {
+                    // it = 1 是周日，需要放在周六(it = 7)后面
+                    if (it == 1) 8 else it
+                }.map { key ->
                     weekdayList.find { it.key == key }?.alia ?: ""
                 }
                 return alias.joinToString(separator = " ")
